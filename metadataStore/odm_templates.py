@@ -2,7 +2,7 @@ __author__ = 'arkilic'
 
 from mongoengine import Document, DynamicDocument,EmbeddedDocument, DynamicEmbeddedDocument
 from mongoengine import (DateTimeField, StringField, DictField, IntField, FloatField, ListField,
-                         ReferenceField, EmbeddedDocumentField, DynamicField, DENY)
+                         ReferenceField, EmbeddedDocumentField, DynamicField, MapField, DENY)
 from getpass import getuser
 
 
@@ -90,7 +90,7 @@ class EndRunEvent(DynamicDocument):
     meta = {'indexes': ['-_id', '-time', '-exit_status', '-begin_run_event']}
 
 
-class DataKeys(DynamicEmbeddedDocument):
+class DataKey(DynamicEmbeddedDocument):
     """Describes the objects in the data property of Event documents.
     Be aware that this is DynamicEmbeddedDoc Append fields rather than
     custom dict field
@@ -131,7 +131,7 @@ class EventDescriptor(DynamicDocument):
     uid = StringField(required=True, unique=True)
     time = FloatField(required=True)
     time_as_datetime = DateTimeField(required=False) # placeholder for human debugging
-    data_keys = EmbeddedDocumentField(DataKeys, required=True)
+    data_keys = MapField(EmbeddedDocumentField(DataKey), required=True)
     meta = {'indexes': ['-begin_run_event', '-time']}
 
 
