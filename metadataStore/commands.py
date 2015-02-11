@@ -2,10 +2,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import six
 from metadataStore.odm_templates import (BeginRunEvent, BeamlineConfig,
-                                         EndRunEvent, EventDescriptor, Event)
+                                         EndRunEvent, EventDescriptor, Event,
+                                         DataKey)
 import datetime
-import metadataStore
-from mongoengine import connect
+from mongoengine import connect, EmbeddedDocument
 
 import metadataStore
 
@@ -18,9 +18,10 @@ def db_connect(func):
         return func(*args, **kwargs)
     return inner
 
+
 @db_connect
-def insert_begin_run(time, beamline_id, beamline_config=None, owner=None,
-                     scan_id=None, custom=None):
+def insert_begin_run(time, scan_id, beamline_id, uid, beamline_config=None,
+                     owner=None, custom=None):
     """ Provide a head for a sequence of events. Entry point for an
     experiment's run.
 
@@ -48,11 +49,10 @@ def insert_begin_run(time, beamline_id, beamline_config=None, owner=None,
         Inserted mongoengine object
 
     """
-    begin_run = BeginRunEvent(time=time, scan_id=scan_id, owner=owner,
+    begin_run = BeginRunEvent(time=time, scan_id=scan_id, uid=uid, owner=owner,
                               time_as_datetime=__todatetime(time),
                               beamline_id=beamline_id, custom=custom,
-                              beamline_config=beamline_config.id
-                              if beamline_config else None)
+                              beamline_config=beamline_config)
     begin_run.save(validate=True, write_concern={"w": 1})
 
     return begin_run
@@ -87,7 +87,7 @@ def insert_end_run(begin_run_event, time, reason=None):
     return begin_run
 
 @db_connect
-def insert_beamline_config(config_params=None):
+def insert_beamline_config(uid, config_params=None):
     """ Create a beamline_config  in metadataStore database backend
 
     Parameters
@@ -101,13 +101,14 @@ def insert_beamline_config(config_params=None):
     blc : BeamlineConfig
         The document added to the collection
     """
-    beamline_config = BeamlineConfig(config_params=config_params)
+    beamline_config = BeamlineConfig(uid=uid, config_params=config_params)
     beamline_config.save(validate=True, write_concern={"w": 1})
 
     return beamline_config
 
 @db_connect
-def insert_event_descriptor(begin_run_event, data_keys, time, event_type=None):
+def insert_event_descriptor(begin_run_event, data_keys, time, uid,
+                            event_type=None):
     """ Create an event_descriptor in metadataStore database backend
 
     Parameters
@@ -127,8 +128,14 @@ def insert_event_descriptor(begin_run_event, data_keys, time, event_type=None):
         The document added to the collection.
 
     """
-    event_descriptor = EventDescriptor(begin_run_event=begin_run_event.id,
-                                       data_keys=data_keys, time=time,
+    # Unpack data_keys into the proper DynamicEmbeddedDocument
+    # for validation. Plain dicts are not accepted by mongo here.
+    _data_keys = {}
+    for key, val in data_keys.items():
+        _data_keys[key] = DataKey(**val)
+    event_descriptor = EventDescriptor(begin_run_event=begin_run_event,
+                                       data_keys=_data_keys, time=time,
+                                       uid=uid,
                                        event_type=event_type,
                                        time_as_datetime=__todatetime(time))
 
