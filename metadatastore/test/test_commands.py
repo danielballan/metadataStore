@@ -107,8 +107,15 @@ def _run_start_tester(time, beamline_id, scan_id):
 
     run_start = mdsc.insert_run_start(time, beamline_id, scan_id=scan_id,
                                       beamline_config=blc)
-    q_ret = mdsc.find_run_start(_id=run_start.id)[0]
+    q_ret, = mdsc.find_run_start(_id=run_start.id)
     assert_equal(bson.ObjectId(q_ret.id), run_start.id)
+
+    # test enhancement by @ericdill b812d6
+    q_ret, = mdsc.find_run_start(_id=str(run_start.id))
+    assert_equal(bson.ObjectId(q_ret.id), run_start.id)
+    q_ret, = mdsc.find_run_start(uid=run_start.uid)
+    assert_equal(bson.ObjectId(q_ret.id), run_start.id)
+
     Document(run_start)
     ret = RunStart.objects.get(id=run_start.id)
 
@@ -149,7 +156,16 @@ def _event_tester(descriptor, seq_num, data, time):
 
 def _end_run_tester(run_start, time):
     end_run = mdsc.insert_run_stop(run_start, time)
+
+    # end_run is a mongo document, so this .id is an ObjectId
     q_ret, = mdsc.find_run_stop(_id=end_run.id)
+
+    # tests bug fixed by @ericdill in c8befa
+    q_ret, = mdsc.find_run_stop(_id=str(end_run.id))
+
+    # tests bug fixed by @ericdill 1a167a
+    q_ret, = mdsc.find_run_stop(run_start=run_start)
+
     assert_equal(bson.ObjectId(q_ret.id), end_run.id)
     Document(end_run)
     ret = RunStop.objects.get(id=end_run.id)
