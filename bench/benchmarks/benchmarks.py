@@ -12,12 +12,18 @@ class TimeSuite:
     """
     def setup(self):
         mds_setup()
-        blc_id = mds.insert_beamline_config(time=0., config_params={})
-        self.rs_id = mds.insert_run_start(time=0., scan_id=1, beamline_id='bench',
-                                          beamline_config=blc_id, uid=new_uid())
+        kwargs = dict(time=0., scan_id=1, uid=new_uid(), beamline_id='bench')
+
+        # for v0.1.x
+        if hasattr(mds, 'insert_beamline_config'):
+            blc_id = mds.insert_beamline_config(time=0., config_params={})
+            kwargs['beamline_config'] = blc_id
+
+        self.rs_id = mds.insert_run_start(**kwargs)
         data_keys = dict(a=dict(source='', dtype='number', shape=None))
-        self.desc_id = mds.insert_event_descriptor(run_start=self.rs_id, data_keys=data_keys,
-                                             time=0., uid=new_uid())
+        self.desc_id = mds.insert_event_descriptor(run_start=self.rs_id,
+                                                   data_keys=data_keys,
+                                                   time=0., uid=new_uid())
         # Generate data to insert.
         N = 1000
         self.data = N * [dict(a=1)]

@@ -44,7 +44,8 @@
         "pyyaml": [],
         "prettytable": [],
         "humanize": [],
-        "pytz": []
+        "pytz": [],
+        "boltons": []
     },
 
     // The directory (relative to the current directory) that benchmarks are
