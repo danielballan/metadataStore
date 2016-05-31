@@ -31,6 +31,8 @@ def test_noisy_for_smoke(v):
     itertools.product([-1, 1], [temperature_ramp, multisource_event])
 )
 def test_sleepy_failures(failing_time, mod):
+    import metadatastore.conf
+    print(metadatastore.conf.connection_config)
     with pytest.raises(NotImplementedError):
         mod.run(sleep=failing_time)
 

@@ -98,7 +98,7 @@ class MDSRO(object):
                                            )
                     if val['version'] != self.version:
                         raise RuntimeError('DB version {!r} does not match'
-                                           'API version of FS {} for the '
+                                           'API version of MDS {} for the '
                                            '{} collection'.format(
                                                val, self.version, col_name))
         return self.__db
